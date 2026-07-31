@@ -1,0 +1,599 @@
+<title>Предпроектный анализ — CRM контейнерной логистики</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    /* palette — steel / graphite corridor */
+    --graphite: #1E2A32;
+    --graphite-2: #26343d;
+    --steel: #6B7B87;
+    --steel-faint: #9aa8b1;
+    --base: #F5F6F4;
+    --base-2: #ffffff;
+    --line: #dfe3e2;
+    --line-strong: #c7cece;
+    --sea: #2E7D8A;      /* accent — caspian */
+    --sea-deep: #24626c;
+    --amber: #D98A2B;    /* semantic: stuck */
+    --amber-bg: #fbf1e2;
+    --green: #3E8E5A;    /* semantic: delivered / margin */
+    --green-bg: #e9f2ec;
+    --red: #b5473d;      /* semantic: overdue */
+    --red-bg: #f7e9e7;
+
+    --ink: var(--graphite);
+    --ink-soft: #43535d;
+    --paper: var(--base);
+    --card: var(--base-2);
+    --border: var(--line);
+    --border-2: var(--line-strong);
+    --accent: var(--sea);
+    --accent-deep: var(--sea-deep);
+
+    --font-display: "Helvetica Neue", "Arial Narrow", "Segoe UI", system-ui, sans-serif;
+    --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo, monospace;
+
+    --maxw: 940px;
+    --radius: 10px;
+    --radius-s: 6px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e7ecec;
+      --ink-soft: #aeb9bf;
+      --paper: #141c22;
+      --card: #1b262d;
+      --border: #2b3941;
+      --border-2: #38474f;
+      --accent: #46a7b5;
+      --accent-deep: #6cc2ce;
+      --amber: #e6a04e;
+      --amber-bg: #33291a;
+      --green: #5aa877;
+      --green-bg: #1d2c23;
+      --red: #d6685e;
+      --red-bg: #33211f;
+      --steel: #8a99a3;
+      --steel-faint: #6d7c86;
+    }
+  }
+  :root[data-theme="light"] {
+    --ink: var(--graphite); --ink-soft: #43535d;
+    --paper: var(--base); --card: var(--base-2);
+    --border: var(--line); --border-2: var(--line-strong);
+    --accent: var(--sea); --accent-deep: var(--sea-deep);
+    --amber: #D98A2B; --amber-bg: #fbf1e2;
+    --green: #3E8E5A; --green-bg: #e9f2ec;
+    --red: #b5473d; --red-bg: #f7e9e7;
+    --steel: #6B7B87; --steel-faint: #9aa8b1;
+  }
+  :root[data-theme="dark"] {
+    --ink: #e7ecec; --ink-soft: #aeb9bf;
+    --paper: #141c22; --card: #1b262d;
+    --border: #2b3941; --border-2: #38474f;
+    --accent: #46a7b5; --accent-deep: #6cc2ce;
+    --amber: #e6a04e; --amber-bg: #33291a;
+    --green: #5aa877; --green-bg: #1d2c23;
+    --red: #d6685e; --red-bg: #33211f;
+    --steel: #8a99a3; --steel-faint: #6d7c86;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 22px; }
+
+  /* ---- header ---- */
+  header.masthead {
+    border-bottom: 2px solid var(--ink);
+    background:
+      linear-gradient(var(--paper), var(--paper)) padding-box,
+      repeating-linear-gradient(90deg, transparent 0 46px, var(--border) 46px 47px);
+  }
+  .masthead-inner { padding: 30px 22px 24px; }
+  .eyebrow {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: .22em;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--accent);
+    display: flex; align-items: center; gap: 10px;
+    margin: 0 0 14px;
+  }
+  .eyebrow::before {
+    content: ""; width: 26px; height: 2px; background: var(--accent); display: inline-block;
+  }
+  h1.title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(27px, 5vw, 44px);
+    line-height: 1.04;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+    margin: 0 0 14px;
+  }
+  .subtitle { color: var(--ink-soft); font-size: 16.5px; max-width: 62ch; margin: 0 0 22px; }
+  .route {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px;
+    padding: 12px 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-s);
+  }
+  .route b { color: var(--ink); font-weight: 700; }
+  .route .arw { color: var(--accent); font-weight: 700; }
+  .meta-strip {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px;
+  }
+  .stat {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-s);
+    padding: 9px 13px; display: flex; align-items: baseline; gap: 8px;
+  }
+  .stat .n { font-family: var(--font-display); font-weight: 800; font-size: 18px; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .stat .l { font-size: 12px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .06em; }
+
+  /* ---- sticky nav ---- */
+  nav.toc {
+    position: sticky; top: 0; z-index: 20;
+    background: color-mix(in srgb, var(--paper) 88%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+  .toc-inner { display: flex; gap: 4px; overflow-x: auto; padding: 8px 22px; max-width: var(--maxw); margin: 0 auto; scrollbar-width: thin; }
+  .toc a {
+    white-space: nowrap; font-size: 12.5px; font-weight: 600;
+    color: var(--ink-soft); text-decoration: none;
+    padding: 6px 11px; border-radius: 100px; border: 1px solid transparent;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .toc a:hover { color: var(--ink); background: var(--card); border-color: var(--border); }
+
+  /* ---- sections ---- */
+  section { padding: 40px 0 8px; scroll-margin-top: 54px; }
+  .sec-head { display: flex; align-items: baseline; gap: 12px; margin: 0 0 18px; }
+  .sec-num {
+    font-family: var(--font-mono); font-size: 12px; color: var(--accent);
+    font-weight: 700; letter-spacing: .05em; padding-top: 4px;
+  }
+  h2 {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(20px, 3.2vw, 27px); letter-spacing: -0.01em;
+    line-height: 1.12; text-wrap: balance; margin: 0;
+  }
+  h2 + .lede { color: var(--ink-soft); margin: -8px 0 20px; max-width: 68ch; }
+
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: var(--card);
+    padding: 16px 18px; border-radius: 0 var(--radius-s) var(--radius-s) 0;
+    margin: 0 0 22px;
+  }
+  .callout.amber { border-color: var(--amber); background: var(--amber-bg); }
+  .callout p { margin: 0; }
+  .callout p + p { margin-top: 8px; }
+
+  .core-eq {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(15px, 2.6vw, 20px); letter-spacing: -0.01em;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 6px;
+    margin: 4px 0 4px;
+  }
+  .chip-eq { background: var(--graphite); color: #fff; padding: 5px 12px; border-radius: 100px; }
+  :root[data-theme="dark"] .chip-eq, [data-theme="dark"] .chip-eq { background: var(--accent); color: #071013; }
+  @media (prefers-color-scheme: dark) { .chip-eq { background: var(--accent); color: #071013; } }
+  :root[data-theme="light"] .chip-eq { background: var(--graphite); color: #fff; }
+  .core-eq .arw { color: var(--accent); }
+
+  /* score row */
+  .scores { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin: 20px 0 4px; }
+  .score {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 15px 16px;
+  }
+  .score .who { font-size: 12.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-soft); font-weight: 700; }
+  .score .val { font-family: var(--font-display); font-weight: 800; font-size: 30px; line-height: 1.1; margin: 6px 0 2px; font-variant-numeric: tabular-nums; }
+  .score .val small { font-size: 15px; color: var(--steel); font-weight: 700; }
+  .score .bar { height: 6px; background: var(--border); border-radius: 100px; overflow: hidden; margin-top: 6px; }
+  .score .bar > i { display: block; height: 100%; background: var(--accent); border-radius: 100px; }
+
+  /* ---- stage stepper ---- */
+  .stages { list-style: none; margin: 8px 0 0; padding: 0; position: relative; }
+  .stages::before {
+    content: ""; position: absolute; left: 15px; top: 8px; bottom: 8px; width: 2px;
+    background: linear-gradient(var(--accent), var(--steel)); border-radius: 2px;
+  }
+  .stages li { position: relative; padding: 0 0 16px 46px; }
+  .stages li .dot {
+    position: absolute; left: 8px; top: 2px; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--card); border: 2px solid var(--accent); z-index: 1;
+  }
+  .stages li.stuck .dot { border-color: var(--amber); background: var(--amber); box-shadow: 0 0 0 4px var(--amber-bg); }
+  .stages li .s-name { font-weight: 650; }
+  .stages li .s-meta { font-size: 13.5px; color: var(--ink-soft); }
+  .stages li .tag {
+    display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--amber); background: var(--amber-bg); padding: 2px 8px; border-radius: 100px; margin-left: 6px;
+    vertical-align: middle;
+  }
+  .stages li .num { font-family: var(--font-mono); font-size: 12px; color: var(--steel); margin-right: 6px; }
+
+  /* ---- entity cards (data model) ---- */
+  .entities { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .entity {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 15px 16px; border-top: 3px solid var(--accent);
+  }
+  .entity.core { border-top-color: var(--amber); }
+  .entity h3 {
+    font-family: var(--font-mono); font-size: 14px; font-weight: 700; margin: 0 0 3px;
+    display: flex; align-items: center; gap: 8px; color: var(--ink);
+  }
+  .entity h3 .rus { font-family: var(--font-body); color: var(--ink-soft); font-weight: 600; font-size: 13px; }
+  .entity p { font-size: 13.5px; color: var(--ink-soft); margin: 0 0 10px; }
+  .fields { display: flex; flex-wrap: wrap; gap: 5px; }
+  .fields span {
+    font-family: var(--font-mono); font-size: 11.5px; background: var(--paper);
+    border: 1px solid var(--border); border-radius: 4px; padding: 2px 7px; color: var(--ink-soft);
+  }
+  .fields span.k { color: var(--accent-deep); border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); font-weight: 600; }
+
+  /* ---- two-col lists (take / avoid) ---- */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+  .panel h3 { font-family: var(--font-display); font-size: 15px; letter-spacing: .02em; text-transform: uppercase; margin: 0 0 12px; display: flex; align-items: center; gap: 9px; }
+  .panel.take h3 { color: var(--green); }
+  .panel.avoid h3 { color: var(--red); }
+  .panel h3 .ic { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 800; }
+  .panel.take h3 .ic { background: var(--green-bg); color: var(--green); }
+  .panel.avoid h3 .ic { background: var(--red-bg); color: var(--red); }
+  ul.tick { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  ul.tick li { font-size: 14px; padding-left: 20px; position: relative; }
+  ul.tick li::before { position: absolute; left: 0; top: 0; font-weight: 800; }
+  .panel.take ul.tick li::before { content: "✓"; color: var(--green); }
+  .panel.avoid ul.tick li::before { content: "✕"; color: var(--red); }
+
+  /* ---- mvp roles ---- */
+  .roles { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+  .role { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .role .rh { padding: 12px 15px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .role .rh .badge { font-size: 20px; }
+  .role .rh h3 { margin: 0; font-family: var(--font-display); font-size: 15px; letter-spacing: .01em; }
+  .role .rh .sub { font-size: 11.5px; color: var(--ink-soft); }
+  .role ul { list-style: none; margin: 0; padding: 12px 15px; display: flex; flex-direction: column; gap: 9px; }
+  .role ul li { font-size: 13px; color: var(--ink-soft); padding-left: 15px; position: relative; line-height: 1.5; }
+  .role ul li::before { content: "–"; position: absolute; left: 0; color: var(--accent); font-weight: 700; }
+
+  /* ---- risks table ---- */
+  .risk-tbl { display: flex; flex-direction: column; gap: 10px; }
+  .risk { display: grid; grid-template-columns: 1fr 1fr; gap: 0; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .risk .r-l { padding: 14px 16px; border-right: 3px solid var(--amber); }
+  .risk .r-r { padding: 14px 16px; background: color-mix(in srgb, var(--green-bg) 55%, var(--card)); }
+  .risk .lab { font-size: 10.5px; text-transform: uppercase; letter-spacing: .1em; font-weight: 700; margin: 0 0 5px; }
+  .risk .r-l .lab { color: var(--amber); }
+  .risk .r-r .lab { color: var(--green); }
+  .risk p { margin: 0; font-size: 13.5px; }
+  .risk .r-l p { color: var(--ink); }
+  .risk .r-r p { color: var(--ink-soft); }
+
+  /* ---- build order ---- */
+  .build { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+  .step {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-s);
+    padding: 11px 14px; flex: 1 1 150px; min-width: 140px; position: relative;
+  }
+  .step .k { font-family: var(--font-mono); font-size: 20px; font-weight: 700; color: var(--accent); line-height: 1; }
+  .step .t { font-size: 13px; margin-top: 6px; font-weight: 600; }
+  .step .d { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+
+  /* ---- questions (CTA) ---- */
+  #questions { background: var(--graphite); color: #e8edee; border-radius: 14px; padding: 30px 26px 34px; margin-top: 40px; }
+  #questions .sec-head h2 { color: #fff; }
+  #questions .sec-num { color: var(--accent-deep); }
+  #questions .lede { color: #b3c0c6; }
+  .qgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 6px; }
+  .q {
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
+    border-radius: var(--radius); padding: 14px 16px; display: flex; gap: 12px;
+  }
+  .q .qn {
+    font-family: var(--font-display); font-weight: 800; font-size: 15px; color: #061014;
+    background: var(--accent-deep); min-width: 26px; height: 26px; border-radius: 7px;
+    display: grid; place-items: center; flex-shrink: 0;
+  }
+  .q .qt { font-size: 13.5px; color: #d8e0e3; line-height: 1.5; }
+  .q .qt b { color: #fff; }
+
+  footer { color: var(--ink-soft); font-size: 12.5px; padding: 30px 0 50px; border-top: 1px solid var(--border); margin-top: 40px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: space-between; align-items: center; }
+  footer .mono { font-family: var(--font-mono); }
+
+  @media (max-width: 720px) {
+    .scores, .roles { grid-template-columns: 1fr; }
+    .entities, .split, .qgrid { grid-template-columns: 1fr; }
+    .risk { grid-template-columns: 1fr; }
+    .risk .r-l { border-right: none; border-bottom: 3px solid var(--amber); }
+  }
+</style>
+
+<header class="masthead">
+  <div class="masthead-inner wrap">
+    <p class="eyebrow">Предпроектный анализ · Совет из 10 агентов</p>
+    <h1 class="title">CRM для контейнерной логистики на замену Excel</h1>
+    <p class="subtitle">Операционная система учёта перевозок по Среднему коридору. Ручная смена стадий, деньги по плечам, наглядно для владельца — без трекинга, GPS и интеграций.</p>
+    <div class="route">
+      <b>Грузия</b> <span class="arw">──ж/д──▸</span> <b>Баку / Алят</b> <span class="arw">──паром──▸</span> <b>Туркменбаши</b> <span class="arw">──ж/д──▸</span> <b>Ташкент</b> <span class="arw">──авто──▸</span> <b>клиент</b>
+    </div>
+    <div class="meta-strip">
+      <div class="stat"><span class="n">10</span><span class="l">агентов</span></div>
+      <div class="stat"><span class="n">6</span><span class="l">исследователей</span></div>
+      <div class="stat"><span class="n">3</span><span class="l">аудитора</span></div>
+      <div class="stat"><span class="n">153</span><span class="l">веб-поиска</span></div>
+      <div class="stat"><span class="n">4</span><span class="l">сущности ядра</span></div>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="toc-inner">
+    <a href="#verdict">Главный вывод</a>
+    <a href="#stages">Стадии коридора</a>
+    <a href="#model">Модель данных</a>
+    <a href="#mvp">MVP по ролям</a>
+    <a href="#takeavoid">Берём / не делаем</a>
+    <a href="#risks">Риски</a>
+    <a href="#build">Порядок сборки</a>
+    <a href="#questions">9 вопросов к тебе</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <section id="verdict">
+    <div class="sec-head"><span class="sec-num">01</span><h2>Главный вывод</h2></div>
+    <div class="callout">
+      <p>Строим <b>простую операционную CRM на замену Excel</b>, а не «мини-CargoWise». Шесть исследователей и три аудитора <b>независимо сошлись на одном ядре</b> — это сигнал низкого риска.</p>
+    </div>
+    <div class="core-eq">
+      <span class="chip-eq">Контейнер</span><span class="arw">▸</span>
+      <span class="chip-eq">Плечи</span><span class="arw">▸</span>
+      <span class="chip-eq">Журнал стадий</span><span class="arw">▸</span>
+      <span class="chip-eq">Деньги по плечам</span>
+    </div>
+    <p style="color:var(--ink-soft); max-width:70ch;">Технические решения совпали с твоими прошлыми граблями: статус — <code>VARCHAR + CHECK</code> (не Postgres enum), деньги — <code>Decimal</code>, ручная смена стадий, RBAC в сервисном слое, FCL сейчас — LCL только заложить в схему.</p>
+
+    <div class="scores">
+      <div class="score">
+        <div class="who">🦅 Простота</div>
+        <div class="val">6<small>/10</small></div>
+        <div class="bar"><i style="width:60%"></i></div>
+      </div>
+      <div class="score">
+        <div class="who">💡 Польза</div>
+        <div class="val">7<small>/10</small></div>
+        <div class="bar"><i style="width:70%"></i></div>
+      </div>
+      <div class="score">
+        <div class="who">🔧 Реализуемость</div>
+        <div class="val">6<small>/10</small></div>
+        <div class="bar"><i style="width:60%"></i></div>
+      </div>
+    </div>
+    <p style="color:var(--ink-soft); font-size:14px; margin-top:14px;">Все три аудитора сошлись: ядро правильное, риск не в коде, а в <b>соблазне сложить сумму всех «recommended» и получить средний TMS вместо замены Excel</b>. Берём пересечение мнений, а не сумму.</p>
+  </section>
+
+  <section id="stages">
+    <div class="sec-head"><span class="sec-num">02</span><h2>Стадии коридора</h2></div>
+    <p class="lede">Дефолтный каталог (Python-константа). Менеджер выбирает стадию в 1 клик. Это <b>не</b> конечный автомат — груз можно вернуть на таможню или откатить: свободный выбор, порядок нужен только для наглядной отрисовки.</p>
+    <ol class="stages">
+      <li><span class="dot"></span><div class="s-name"><span class="num">01</span>Бронирование <span style="font-weight:400;color:var(--ink-soft)">(booking)</span></div><div class="s-meta">Забронировано место / паром</div></li>
+      <li><span class="dot"></span><div class="s-name"><span class="num">02</span>Загрузка контейнера</div><div class="s-meta">Выдан порожний, погрузка у отправителя в Грузии</div></li>
+      <li><span class="dot"></span><div class="s-name"><span class="num">03</span>В пути по ж/д: Грузия → Баку / Алят</div><div class="s-meta">Плечо 1 · Azerbaijan Railways (ADY)</div></li>
+      <li><span class="dot"></span><div class="s-name"><span class="num">04</span>Прибыл в Баку / Алят + таможня Азербайджан</div><div class="s-meta">Перегрузка ж/д → паром</div></li>
+      <li class="stuck"><span class="dot"></span><div class="s-name"><span class="num">05</span>Ожидание парома в Аляте <span class="tag">точка простоя</span></div><div class="s-meta">Отдельная заметная стадия — здесь груз реально застревает (1–7 дней). Владелец увидит «застряло» именно тут.</div></li>
+      <li><span class="dot"></span><div class="s-name"><span class="num">06</span>На пароме через Каспий</div><div class="s-meta">Плечо 2 · Алят → Туркменбаши</div></li>
+      <li><span class="dot"></span><div class="s-name"><span class="num">07</span>Прибыл в Туркменбаши / выгрузка</div><div class="s-meta">Перегрузка паром → ж/д</div></li>
+      <li><span class="dot"></span><div class="s-name"><span class="num">08</span>В пути по ж/д: Туркменбаши → Узбекистан</div><div class="s-meta">Плечо 3 · Ташкент / Навои (Uzbek Railways)</div></li>
+      <li><span class="dot"></span><div class="s-name"><span class="num">09</span>Таможенное оформление в Узбекистане</div><div class="s-meta">Растаможка на станции назначения</div></li>
+      <li><span class="dot"></span><div class="s-name"><span class="num">10</span>Выдан / доставлен клиенту</div><div class="s-meta">Плечо 4 · авто-доставка до склада</div></li>
+      <li><span class="dot"></span><div class="s-name"><span class="num">11</span>Порожний возвращён <span style="font-weight:400;color:var(--steel-faint)">(опц.)</span></div><div class="s-meta">Завершение цикла контейнера</div></li>
+    </ol>
+  </section>
+
+  <section id="model">
+    <div class="sec-head"><span class="sec-num">03</span><h2>Рекомендованная модель данных</h2></div>
+    <p class="lede">PostgreSQL. Четыре главные сущности + два справочника + пользователи. Каждое поле <span class="fields" style="display:inline"><span class="k">выделенным</span></span> — ключевое решение по оси «просто ↔ гибко».</p>
+    <div class="entities">
+      <div class="entity core">
+        <h3>container <span class="rus">Контейнер / Заказ</span></h3>
+        <p>Центральная сущность — одна запись перевозки. FCL: <code>client_id</code> заполнен. Задел под LCL: NULL + <code>is_consolidated</code>, без таблицы cargo_item.</p>
+        <div class="fields">
+          <span class="k">ref_no</span><span>container_no (ISO 6346)</span><span>container_type</span><span>client_id?</span><span class="k">is_consolidated</span><span class="k">current_stage_code</span><span>current_stage_since</span><span>is_flagged</span><span class="k">status (soft-delete)</span>
+        </div>
+      </div>
+      <div class="entity">
+        <h3>leg <span class="rus">Плечо маршрута</span></h3>
+        <p>Упорядоченный участок: один транспорт, перевозчик, сроки, стоимость. Отдельная таблица (не JSON) — по плечу нужны деньги и агрегация «где застряло».</p>
+        <div class="fields">
+          <span>container_id</span><span class="k">seq (UNIQUE)</span><span>transport_type</span><span>from/to_location</span><span>carrier_id?</span><span>planned_dep/arr</span><span class="k">actual_dep/arr</span>
+        </div>
+      </div>
+      <div class="entity">
+        <h3>stage_event <span class="rus">Журнал стадий</span></h3>
+        <p><b>Сердце системы.</b> Append-only лента: каждая смена стадии = неизменяемая запись. Только INSERT.</p>
+        <div class="fields">
+          <span>container_id</span><span>stage_code</span><span class="k">changed_at (авто)</span><span class="k">changed_by (авто)</span><span>comment</span><span>actual_date?</span>
+        </div>
+      </div>
+      <div class="entity">
+        <h3>charge_line <span class="rus">Деньги по плечу</span></h3>
+        <p>income (клиенту) / expense (перевозчику). Маржа = Σ income − Σ expense по контейнеру.</p>
+        <div class="fields">
+          <span>container_id</span><span>leg_id?</span><span>kind</span><span class="k">amount (Decimal)</span><span>currency=USD</span><span>is_estimated</span><span class="k">payment_status</span><span>due_date</span>
+        </div>
+      </div>
+      <div class="entity">
+        <h3>client / carrier <span class="rus">Справочники</span></h3>
+        <p>Клиент (плательщик) и перевозчик (кому платим на плече). Минимальные.</p>
+        <div class="fields"><span>id</span><span>name</span><span>контакты</span></div>
+      </div>
+      <div class="entity">
+        <h3>users <span class="rus">Роли</span></h3>
+        <p>3 роли + флаг видимости денег. Argon2id для паролей.</p>
+        <div class="fields"><span class="k">role (CHECK)</span><span class="k">can_see_money</span><span>password_hash</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="mvp">
+    <div class="sec-head"><span class="sec-num">04</span><h2>Что входит в MVP — по трём ролям</h2></div>
+    <p class="lede">Аутентификация обязательна для всех: без входа нет автора у записи стадии, а это ядро брифа.</p>
+    <div class="roles">
+      <div class="role">
+        <div class="rh"><span class="badge">🧭</span><div><h3>Менеджер</h3><div class="sub">вводит всё, двигает стадии</div></div></div>
+        <ul>
+          <li>Плотная таблица + чипы-счётчики: <b>[В пути 42] [Ожидание парома 7] [Застряло 3⚠]</b></li>
+          <li>Создание заказа в 2-3 клика: кнопка «Шаблон Средний коридор» → 4 плеча сразу</li>
+          <li>Смена стадии из строки: клик → поповер, дата/время/автор автоматически</li>
+          <li>Карточка с append-only лентой истории (кто / когда / что / комментарий)</li>
+        </ul>
+      </div>
+      <div class="role">
+        <div class="rh"><span class="badge">📊</span><div><h3>Владелец</h3><div class="sub">проверяет, берёт выгрузки</div></div></div>
+        <ul>
+          <li><b>Где деньги</b> — к получению / просрочено / маржа за период</li>
+          <li><b>Где застряло</b> — список контейнеров без движения дольше порога</li>
+          <li><b>Сколько в пути</b> — разбивка по текущему плечу коридора</li>
+          <li>Лента «что изменилось» + любая цифра кликабельна (drill-down)</li>
+        </ul>
+      </div>
+      <div class="role">
+        <div class="rh"><span class="badge">🧮</span><div><h3>Бухгалтер</h3><div class="sub">деньги и расчёты</div></div></div>
+        <ul>
+          <li>Строки income / expense по плечу, авто-маржа по контейнеру</li>
+          <li>Флаг estimated / actual — ловит поздний демередж</li>
+          <li>Статус оплаты + due_date, плоский список «кто должен»</li>
+          <li>Одна валюта (USD default), экспорт в 1С / QuickBooks</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:16px;">
+      <p><b>Инфраструктура MVP:</b> экспорт в Excel/CSV как видная кнопка на каждом списке (выгружает текущий фильтр) · Alembic + сид с 1-го дня · soft-delete/архив вместо удаления · единая транзакция смены стадии.</p>
+    </div>
+  </section>
+
+  <section id="takeavoid">
+    <div class="sec-head"><span class="sec-num">05</span><h2>Что берём из реальных решений · что сознательно не делаем</h2></div>
+    <div class="split">
+      <div class="panel take">
+        <h3><span class="ic">✓</span>Берём</h3>
+        <ul class="tick">
+          <li>Каноничная последовательность вех (Tradlinx / Tier2Systems) — сокращённая под ручной ввод</li>
+          <li>Набор полей карточки из ж/д накладной CIM/SMGS — только то, что вводит диспетчер</li>
+          <li>Валидация check-digit ISO 6346 при вводе номера контейнера — защита от опечаток</li>
+          <li>Разделение «заказ ↔ плечи ↔ статусы ↔ затраты» из open-source TMS (OpenTMS / Odoo)</li>
+          <li>Живой набор документов коридора (T1, CMR, SMGS) от форвардеров Sofmar.ge, RealTrans.ge</li>
+        </ul>
+      </div>
+      <div class="panel avoid">
+        <h3><span class="ic">✕</span>Не делаем</h3>
+        <ul class="tick">
+          <li>Трекинг / GPS / карта / интеграции (ADY, паром, AIS, EDI) — прямой запрет заказчика</li>
+          <li>Postgres ENUM — только VARCHAR+CHECK + Python-константы</li>
+          <li>Мультивалютную машинерию в v1 — одна колонка currency=USD</li>
+          <li>Полную бухгалтерию (план счетов, проводки, GL, aging/DSO) — отдаём экспортом</li>
+          <li>Таблицу cargo_item и UI сборного груза (LCL) на старте — только задел в схеме</li>
+          <li>Конечный автомат стадий, kanban, drag-drop, RBAC-движок — во Фазу 2</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="risks">
+    <div class="sec-head"><span class="sec-num">06</span><h2>Топ-риски и как лечим</h2></div>
+    <div class="risk-tbl">
+      <div class="risk">
+        <div class="r-l"><p class="lab">Риск №1 — главный</p><p><b>Паралич от объёма</b> («Фаза 2 в маске MVP»). Известная грабля: вязнешь на хендофф-ТЗ и плодишь планы вместо кода (PKUonline / TourCRM месяцами в «Фазе 0»).</p></div>
+        <div class="r-r"><p class="lab">Лечим</p><p>Брать пересечение мнений, а не сумму. Жёсткий вертикальный порядок сборки, каждый пункт = рабочий E2E-срез. <b>Не писать хендофф-ТЗ — двигать код.</b></p></div>
+      </div>
+      <div class="risk">
+        <div class="r-l"><p class="lab">Риск №2</p><p>Рассинхрон «текущая стадия ≠ последняя запись журнала», если денормализацию размазать по эндпоинтам.</p></div>
+        <div class="r-r"><p class="lab">Лечим</p><p>Единственная сервисная функция: атомарно INSERT event + UPDATE current_stage в одной транзакции. Журнал только INSERT.</p></div>
+      </div>
+      <div class="risk">
+        <div class="r-l"><p class="lab">Риск №3</p><p>Продукт проиграет Excel по скорости ввода и поиска — люди вернутся в Ctrl+F.</p></div>
+        <div class="r-r"><p class="lab">Лечим</p><p>3 дешёвые must-have: пресет маршрута (2-3 клика), видимый поиск+чипы, бейдж «застряло». Дедлайны краснеют — чего Excel не умеет.</p></div>
+      </div>
+      <div class="risk">
+        <div class="r-l"><p class="lab">Риск №4</p><p>Неоднозначная единица учёта (контейнер vs заказ клиента) → владелец не поверит цифрам.</p></div>
+        <div class="r-r"><p class="lab">Лечим</p><p>Зафиксировать: первичен контейнер, деньги/маржа на контейнер; заказ клиента = фильтр/представление.</p></div>
+      </div>
+      <div class="risk">
+        <div class="r-l"><p class="lab">Риск №5</p><p>Утечка маржи менеджеру — или переписывание всех эндпоинтов ради сокрытия позже.</p></div>
+        <div class="r-r"><p class="lab">Лечим</p><p>Один флаг <code>can_see_money</code> + разная сериализация list-эндпоинта по роли. Не field-level RBAC.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="build">
+    <div class="sec-head"><span class="sec-num">07</span><h2>Порядок сборки — вертикальными срезами</h2></div>
+    <p class="lede">Каждый срез — рабочий, проверяется E2E через фронт. Никаких «сначала вся модель, потом весь фронт».</p>
+    <div class="build">
+      <div class="step"><div class="k">0</div><div class="t">Скелет</div><div class="d">auth + сид (стадии, точки, типы)</div></div>
+      <div class="step"><div class="k">1</div><div class="t">Контейнер + Плечи</div><div class="d">CRUD + пресет маршрута</div></div>
+      <div class="step"><div class="k">2</div><div class="t">Смена стадии</div><div class="d">журнал + денорм. (1 транзакция)</div></div>
+      <div class="step"><div class="k">3</div><div class="t">Карточка</div><div class="d">лента истории</div></div>
+      <div class="step"><div class="k">4</div><div class="t">Деньги</div><div class="d">income/expense + маржа</div></div>
+      <div class="step"><div class="k">5</div><div class="t">Дашборд</div><div class="d">в пути / застряло / маржа</div></div>
+      <div class="step"><div class="k">6</div><div class="t">Экспорт</div><div class="d">xlsx</div></div>
+    </div>
+  </section>
+
+  <section id="questions">
+    <div class="sec-head"><span class="sec-num">08</span><h2>9 вопросов к тебе перед стартом кода</h2></div>
+    <p class="lede">Ответы на них определяют модель данных и границу MVP. Отвечай коротко — по каждому у меня уже есть дефолт, если промолчишь.</p>
+    <div class="qgrid">
+      <div class="q"><div class="qn">1</div><div class="qt"><b>Направление:</b> только Грузия→Узбекистан, или нужны обратные рейсы? Влияет на двунаправленность каталога стадий.</div></div>
+      <div class="q"><div class="qn">2</div><div class="qt"><b>Валюта:</b> платежи по плечам бывают не в USD (GEL/AZN/TMT/UZS/RUB)? Часто? Мультивалюта в v1 или Фаза 2.</div></div>
+      <div class="q"><div class="qn">3</div><div class="qt"><b>Единица учёта:</b> подтверждаешь, что первичен КОНТЕЙНЕР (деньги/застревание на контейнер), а заказ клиента = фильтр?</div></div>
+      <div class="q"><div class="qn">4</div><div class="qt"><b>LCL/сборный:</b> насколько скоро реально нужен? «Через год» → прячем; «скоро» → планируем экран cargo_item.</div></div>
+      <div class="q"><div class="qn">5</div><div class="qt"><b>Финансы:</b> хватит плоских строк + «кто должен», или бухгалтеру нужен инвойс-документ (номер/дата/частичные оплаты) сейчас?</div></div>
+      <div class="q"><div class="qn">6</div><div class="qt"><b>Авто-плечи</b> (склад→порт, станция→склад): нужны в маршруте, или заказы начинаются/кончаются на станции/в порту?</div></div>
+      <div class="q"><div class="qn">7</div><div class="qt"><b>Порог «застряло»:</b> единый для всех, или свой на плечо (на таможне 5 дней норма, на пароме 5 дней = проблема)? Нужны пуши?</div></div>
+      <div class="q"><div class="qn">8</div><div class="qt"><b>Каталог стадий:</b> подтверждаешь эти 10-11 стадий? Нужна ли владельцу возможность самому их редактировать (тогда каталог = таблица+админка)?</div></div>
+      <div class="q"><div class="qn">9</div><div class="qt"><b>Документы:</b> хранить сканы файлов (инвойс, packing list, SMGS, коносамент), или достаточно НОМЕРОВ документов для поиска?</div></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Предпроектный анализ · CRM контейнерной логистики</span>
+    <span class="mono">10 агентов · 6 исследователей + 3 аудитора + 1 председатель · 2026-07-31</span>
+  </div>
+</footer>
+
+<script>
+  // theme toggle support: honor data-theme override injected by host
+  (function () {
+    try {
+      var root = document.documentElement;
+      if (!root.getAttribute('data-theme')) {
+        // no-op: media query handles default; host may set data-theme later
+      }
+    } catch (e) {}
+  })();
+</script>
