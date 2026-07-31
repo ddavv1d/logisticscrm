@@ -1,4 +1,4 @@
-# 06 — VERIFICATION (trust no agent, verify)
+# VERIFICATION (trust no agent, verify)
 
 Не заявляй «готово» без пруфа. Верифицируй после КАЖДОЙ задачи.
 
@@ -52,6 +52,6 @@ gitleaks detect --no-banner --redact     # секреты — 0
 ```
 
 ## Финал
-- LLM Council на готовый продукт (`04_METHODOLOGY.md`) — ловит то, что пропустил.
+- LLM Council на готовый продукт (`docs/WORKFLOW_AND_SKILLS.md`, секция «Council-ревью») — ловит то, что пропустил.
 - Подними локально, дай владельцу креды/URL для теста.
 - Пуш/деплой — только с явного согласия владельца.

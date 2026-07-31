@@ -28,6 +28,9 @@ sa.Column("transport_type", sa.String(16), nullable=False)
 Или `sa.Enum(..., native_enum=False, create_constraint=True, values_callable=lambda e:[m.value for m in e])`.
 Нативный enum — боль при изменении (ALTER TYPE не откатывается в транзакции) и ломает Alembic autogenerate. **Грабля Давида из прошлых проектов — не повторять.**
 
+> ⚠️ `[review]` **Nullable + enum-CHECK:** для nullable-колонки НЕ писать `CHECK (col IN ('a','b', NULL))` — литерал `NULL` в IN не помогает NULL проходить (это делает сама nullability), но **тихо отключает гард**: любой мусор проходит (`'GARBAGE' IN ('a', NULL)` → UNKNOWN → CHECK пропускает). Проверено рантаймом на Postgres. Правильно: `CHECK (col IS NULL OR col IN ('a','b'))`.
+> **Деньги-инварианты:** `CHECK (amount > 0)` + направление задаёт `kind` (не отрицательный amount); `paid_amount` отдельным полем для 'partial'; `CHECK (currency = 'USD')` в v1 (мультивалюта = Фаза 2). **Soft-delete:** все дочерние FK — `ON DELETE RESTRICT`, не CASCADE.
+
 ### 3. Каталог стадий = Python-константа (не таблица на старте)
 Список стадий коридора и типов зарядов — константы в `app/domain/stages.py`. Менеджер выбирает из них. Промотать в редактируемую таблицу stage_catalog **только когда владелец реально попросит** редактировать стадии (Фаза 2). Один источник правды, не хардкодить по роутерам.
 
@@ -65,13 +68,13 @@ Alembic + сид с первого дня (стадии, типовые точк
 
 - **Дизайн-система первой:** токены в `tailwind.config.js` (палитра «стальной коридор» — см. UX-раздел, зоны стадий, радиусы, тени) + примитивы `components/ui.jsx` (Button/Card/Field/Input/Badge/EmptyState/Skeleton/Toast).
 - **Экраны из 21st.dev** (см. `21ST_MCP_GUIDE.md` + `docs/UI_COMPONENT_MAP.md`) — адаптированные под токены, не слепой копипаст.
-- **api-клиент** (`lib/api.js`): fetch с `credentials:'include'` + CSRF-header из cookie; на 401 — один silent refresh + retry (single-flight, без петли).
+- **api-клиент** (`lib/api.js`): fetch с `credentials:'include'` + CSRF-header из cookie; на 401 — **редирект на `/login`**. `[review]` Сессия — единая opaque cookie со скользящим TTL 12-24ч; silent-refresh/single-flight НЕ делаем в MVP (рефрешить opaque-сессию нечего, брифом не требуется — это scope-creep). Если позже введём короткий access+refresh — тогда single-flight refresh, не раньше.
 - **Состояния всегда:** loading=Skeleton (не спиннер), empty=EmptyState (учит+зовёт), error=inline.
 - **Смена стадии в 1-2 клика:** клик по бейджу стадии в строке → поповер со списком стадий + опц. комментарий + опц. дата факта. Синхронное сохранение + тост «сохранено». БЕЗ модалок «вы уверены?». Дата/время/автор — автоматически на бэке.
 - **Наглядность маршрута:** индикатор «Плечо N из M · [текущая стадия]» + вертикальная append-only лента истории (иконка транспорта + что + автор + дата-время + комментарий, новейшее сверху).
 - **Чипы-счётчики** над списком контейнеров: `[Все N] [В пути N] [Ожидание парома N] [Застряло N⚠] [Доставлено N]` — клик фильтрует. «Застряло» — янтарным.
 - **Мотивированная анимация** (taste-skill): только где несёт смысл; `prefers-reduced-motion`.
-- **Ленивый тяжёлый код:** recharts → `lazy()` + `manualChunks` (не грузить на списке).
+- **Ленивый тяжёлый код:** recharts → `React.lazy()` + `Suspense`. `[review]` `manualChunks` добавлять **только если замер бандла покажет проблему** (не по умолчанию). Если график дашборда уйдёт в Фазу 2 — recharts в MVP не нужен вовсе.
 
 ---
 
