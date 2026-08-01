@@ -21,9 +21,11 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(password: str, password_hash: str) -> bool:
+    # ловим ЛЮБУЮ ошибку argon2 (mismatch, битый/пустой хеш, InvalidHash) → False,
+    # чтобы неверный/повреждённый хеш давал 401, а не 500.
     try:
         return _ph.verify(password_hash, password)
-    except VerifyMismatchError:
+    except Exception:
         return False
 
 

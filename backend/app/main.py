@@ -53,3 +53,18 @@ if _STATIC.is_dir():
                 return FileResponse(idx)
         from fastapi.responses import JSONResponse
         return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
+
+
+# --- глобальный лог необработанных ошибок (чтобы прод-500 был виден в логах Render) ---
+import logging
+import traceback as _tb
+
+from fastapi.responses import JSONResponse as _JSON
+
+_log = logging.getLogger("uvicorn.error")
+
+
+@app.exception_handler(Exception)
+async def _log_unhandled(request, exc):
+    _log.error("UNHANDLED %s %s\n%s", request.method, request.url.path, _tb.format_exc())
+    return _JSON({"detail": "Internal Server Error"}, status_code=500)
