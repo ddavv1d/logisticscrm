@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { -webkit-font-smoothing: antialiased; }
+  body {
+    @apply bg-base text-graphite;
+    font-feature-settings: 'tnum' 0;
+  }
+  :focus-visible { @apply outline-none ring-2 ring-sea ring-offset-1; }
+}
+
+@layer components {
+  .tabnum { font-variant-numeric: tabular-nums; }
+  .card { @apply bg-base-card border border-line rounded-card shadow-card; }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium
+           transition-colors cursor-pointer select-none border-line text-steel;
+  }
+  .chip-active { @apply bg-graphite text-white border-graphite; }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-chip px-4 py-2 text-sm font-semibold
+           transition-all active:translate-y-px disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .btn-primary { @apply btn bg-sea text-white hover:bg-sea-deep; }
+  .btn-ghost { @apply btn border border-line text-graphite hover:bg-base-2; }
+  .field-label { @apply block text-xs font-semibold uppercase tracking-wide text-steel mb-1.5; }
+  .input {
+    @apply w-full rounded-chip border border-line bg-base-card px-3 py-2 text-sm
+           placeholder:text-steel-faint focus:border-sea;
+  }
+}

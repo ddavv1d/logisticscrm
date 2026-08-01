@@ -38,3 +38,5 @@ research/RAW_COUNCIL_RESULT.json
 *.sql.bak
 *.dump
 backend/.venv/
+frontend/node_modules/
+frontend/dist/
