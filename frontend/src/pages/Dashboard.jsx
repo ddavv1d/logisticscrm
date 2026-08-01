@@ -6,7 +6,16 @@ import { useI18n } from '../lib/i18n.js'
 import { makeLookups, fmtUsd, fmtDateTime } from '../lib/format.js'
 import { StatCard, EmptyState, Skeleton } from '../components/ui.jsx'
 import CorridorLane from '../components/CorridorLane.jsx'
+import CorridorMap from '../components/CorridorMap.jsx'
 import { DollarSign, AlertTriangle, TrainFront, Clock, ArrowRight } from '../lib/icons.jsx'
+
+// реальные координаты городов Среднего коридора (плечи маршрута)
+const CORRIDOR_LEGS = [
+  { from: { lat: 42.15, lng: 41.67, label: 'Поти' }, to: { lat: 41.72, lng: 44.83, label: 'Тбилиси' }, done: true },
+  { from: { lat: 41.72, lng: 44.83, label: 'Тбилиси' }, to: { lat: 40.41, lng: 49.87, label: 'Баку/Алят' }, done: true },
+  { from: { lat: 40.41, lng: 49.87, label: 'Баку/Алят' }, to: { lat: 40.02, lng: 53.00, label: 'Туркменбаши' }, done: true },
+  { from: { lat: 40.02, lng: 53.00, label: 'Туркменбаши' }, to: { lat: 41.31, lng: 69.24, label: 'Ташкент' }, done: false },
+]
 
 export default function Dashboard() {
   const { reference } = useAuth()
@@ -43,7 +52,16 @@ export default function Dashboard() {
           sub={`${t('delivered')}: ${d.counts.delivered}`} onClick={() => nav('/containers?chip=in_transit')} />
       </div>
 
-      {/* лента коридора — на всю ширину, главный визуал */}
+      {/* живая карта коридора */}
+      <div className="card p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-bold text-sm uppercase tracking-wide text-steel">Карта маршрута</h2>
+          <span className="text-xs text-steel-faint">Средний коридор · TITR</span>
+        </div>
+        <CorridorMap legs={CORRIDOR_LEGS} />
+      </div>
+
+      {/* лента коридора — по этапам */}
       <div className="card p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-sm uppercase tracking-wide text-steel">{t('byCorridorStage')}</h2>
