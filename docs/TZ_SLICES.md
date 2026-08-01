@@ -79,9 +79,11 @@
 | leg_id | BIGINT NULL FK leg | к какому плечу относится (nullable — сквозные затраты) |
 | kind | VARCHAR(8) NOT NULL — `CHECK (kind IN ('income','expense'))` | клиенту / перевозчику. **Инвариант:** amount всегда положителен, направление задаёт kind |
 | charge_type | VARCHAR(40) NOT NULL — `CHECK (charge_type IN (...CHARGE_TYPES...))` | `[review]` CHECK по Python-константе CHARGE_TYPES (см. ниже) — даёт разрез затрат в дашборде бесплатно |
-| amount | NUMERIC(14,2) NOT NULL — `CHECK (amount > 0)` | `[review]` Decimal, строго > 0; сторно/возврат — отдельной строкой, НЕ отрицательным amount |
-| paid_amount | NUMERIC(14,2) NOT NULL DEFAULT 0 — `CHECK (paid_amount >= 0 AND paid_amount <= amount)` | `[review]` **добавлено** — без него 'partial' невычислим. Остаток долга = amount − paid_amount |
-| currency | CHAR(3) NOT NULL DEFAULT 'USD' — `CHECK (currency = 'USD')` | `[review]` v1-замок: мультивалюта = Фаза 2 (снять CHECK при пересчёте курсов). Per-row currency оставлен как задел |
+| amount | NUMERIC(14,2) NOT NULL — `CHECK (amount > 0)` | Decimal в ВАЛЮТЕ плеча (currency), строго > 0; сторно — отдельной строкой |
+| paid_amount | NUMERIC(14,2) NOT NULL DEFAULT 0 — `CHECK (paid_amount >= 0 AND paid_amount <= amount)` | остаток долга = amount − paid_amount (в валюте строки) |
+| currency | CHAR(3) NOT NULL DEFAULT 'USD' — `CHECK (currency IN (...CURRENCIES...))` | **МУЛЬТИВАЛЮТА включена** (по требованию Давида): USD/GEL/AZN/TMT/UZS/RUB/EUR. Константа `CURRENCIES` в `app/domain/money.py` |
+| rate_to_usd | NUMERIC(14,6) NOT NULL DEFAULT 1 — `CHECK (rate_to_usd > 0)` | курс к USD на дату операции, **вводится вручную** (курс сделки; для USD = 1). Не тянем из API — простота |
+| amount_usd | NUMERIC(14,2) — GENERATED ALWAYS AS `(amount * rate_to_usd)` STORED | **USD-эквивалент, вычисляется.** Маржа и ВСЕ отчёты — по amount_usd (единая база). Пользователь видит и оригинал, и USD |
 | is_estimated | BOOLEAN NOT NULL DEFAULT false | estimated/actual — ловит поздний демередж |
 | payment_status | VARCHAR(8) NOT NULL DEFAULT 'unpaid' — `CHECK (payment_status IN ('unpaid','partial','paid'))` | **считать по (amount−paid_amount), не по тексту статуса.** Рекомендуется GENERATED из paid_amount |
 | due_date | DATE NULL | срок оплаты (краснеет при просрочке) |
@@ -94,6 +96,9 @@
 ### `CHARGE_TYPES` (Python-константа, `app/domain/charges.py`) `[review]`
 `freight_rail, ferry, truck, customs, demurrage, detention, storage, forwarding, insurance, terminal_handling, other`.
 > НЕ добавлять free_days/дата-триггеры демереджа — это запрещённый заказчиком трекинг (Фаза 2).
+
+### `CURRENCIES` (Python-константа, `app/domain/money.py`) — мультивалюта
+`USD` (база, rate=1), `GEL, AZN, TMT, UZS, RUB, EUR`. Символы/форматирование для UI. Курс `rate_to_usd` вводится вручную на строке денег (курс сделки на дату), `amount_usd` = GENERATED. **Маржа и все отчёты — в USD (amount_usd).** Реальный коридор: фрахт часто USD, локальные плечи/таможня — в GEL/AZN/TMT/UZS.
 
 ### ✅ D1 — РЕШЕНО: точки маршрута = VARCHAR + Python-константа `CORRIDOR_LOCATIONS`
 VARCHAR-поле + предзаполненный dropdown из константы (`app/domain/locations.py`): `Поти, Батуми, Тбилиси, Баку/Алят, Туркменбаши, Ташкент, Навои` (+ добавлять по факту). Защита от опечаток без таблицы. Промотать в таблицу `location` — **Фаза 2**, если понадобится админка точек.
@@ -158,11 +163,11 @@ STAGE_CATALOG = [
 - **Done:** открыть контейнер → лента показывает всю историю стадий в порядке; плечи видны; E2E.
 
 ### Срез 4 — Деньги income/expense + маржа
-- **Backend:** CRUD charge_line. Агрегат маржи = Σ(income) − Σ(expense) по контейнеру (Decimal, `amount>0`, направление по `kind`). `[review]` **долг/«кто должен»/дашборд считать по `(amount − paid_amount) > 0`, НЕ по тексту `payment_status`.** Список «кто должен» = строки income с остатком > 0, группировка по client_id.
+- **Backend:** CRUD charge_line. **Маржа = Σ(income.amount_usd) − Σ(expense.amount_usd)** по контейнеру (всё в USD через GENERATED amount_usd — мультивалюта суммируется корректно). `[review]` **долг/«кто должен»/дашборд считать по `(amount − paid_amount) > 0`, НЕ по тексту `payment_status`.** Список «кто должен» = строки income с остатком > 0, группировка по client_id.
+- **Мультивалюта (по требованию Давида):** строка денег принимает `currency` (dropdown из CURRENCIES) + `rate_to_usd` (для не-USD; USD→1 авто). `amount_usd` вычисляется. В UI показывать **и оригинал, и USD-эквивалент** («₾3 500 · $1 290»).
 - `[review]` **Сериализация маржи по роли — безопасная техника:** вырезать `margin` в сервисе ДО сериализации ИЛИ две модели `ManagerContainerOut`/`OwnerContainerOut`. НЕ полагаться на «скрыто на экране».
-- `[review]` **Валютный замок:** до этого среза `CHECK (currency='USD')` уже в схеме (мультивалюта = Фаза 2). Закрыть **Q2** перед срезом. Тест на смешанные валюты в Done.
-- **Frontend:** блок денег в карточке (строки income/expense по плечу, статус оплаты + остаток + due_date, флаг estimated/actual, авто-маржа); экран/вкладка бухгалтера «кто должен».
-- **Done:** добавить income+expense → маржа верна; **в СЫРОМ JSON под manager нет ключа `margin`** (assert, не «на экране не видно»); частично оплаченная строка даёт верный остаток; просроченный due_date краснеет; тест смешанных валют падает корректно; E2E.
+- **Frontend:** блок денег в карточке (строки income/expense по плечу с валютой+USD, статус оплаты + остаток + due_date, флаг estimated/actual, авто-маржа в USD); экран/вкладка бухгалтера «кто должен».
+- **Done:** добавить income+expense в разных валютах → маржа в USD верна (проверить пересчёт по rate_to_usd); **в СЫРОМ JSON под manager нет ключа `margin`** (assert); частично оплаченная строка даёт верный остаток; просроченный due_date краснеет; E2E.
 
 ### Срез 5 — Дашборд владельца (drill-down)
 - **Backend:** агрегирующие эндпоинты (через `build_container_query`/`is_stuck` из среза 1): (1) деньги — к получению/**просрочено (due_date<today)**/маржа за период; (2) застряло — `is_stuck` (порог `stuck_after_days` стадии; None → не застревает); (3) в пути — разбивка по текущему плечу; (4) лента последних N stage_event.
