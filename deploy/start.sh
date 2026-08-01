@@ -1,6 +1,27 @@
 #!/usr/bin/env sh
 set -e
 
+# КРИТИЧНО: расширение citext должно существовать ДО миграций (User.email = CITEXT).
+# На чистой Render-БД env.py-трюк может не отработать → login падает 500. Делаем явно.
+echo "[start] ensuring citext extension..."
+python - <<'PY' || echo "[start] citext ensure skipped"
+import asyncio
+from app.core.db import _async_url
+from app.core.config import settings
+import asyncpg
+
+async def main():
+    url = _async_url(settings.DATABASE_URL).replace("postgresql+asyncpg://", "postgresql://")
+    conn = await asyncpg.connect(url)
+    try:
+        await conn.execute("CREATE EXTENSION IF NOT EXISTS citext")
+        print("[start] citext ready")
+    finally:
+        await conn.close()
+
+asyncio.run(main())
+PY
+
 echo "[start] running migrations..."
 alembic upgrade head || echo "[start] alembic failed (continuing — tables may exist)"
 
