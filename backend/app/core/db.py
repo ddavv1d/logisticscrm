@@ -11,7 +11,27 @@ from sqlalchemy.orm import DeclarativeBase
 
 from app.core.config import settings
 
-engine = create_async_engine(settings.DATABASE_URL, echo=False, pool_pre_ping=True)
+
+def _async_url(url: str) -> str:
+    """Нормализуем DATABASE_URL под async-драйвер asyncpg.
+
+    Render/Heroku дают 'postgres://' или 'postgresql://' (sync psycopg).
+    asyncpg также не понимает query-параметр sslmode — убираем его
+    (TLS asyncpg включает через отдельный ssl-контекст автоматически на managed БД).
+    """
+    if url.startswith("postgres://"):
+        url = "postgresql+asyncpg://" + url[len("postgres://"):]
+    elif url.startswith("postgresql://"):
+        url = "postgresql+asyncpg://" + url[len("postgresql://"):]
+    # выкинуть ?sslmode=... / &sslmode=... (asyncpg его не принимает)
+    if "sslmode=" in url:
+        import re
+        url = re.sub(r"[?&]sslmode=[^&]*", "", url)
+        url = url.replace("?&", "?").rstrip("?&")
+    return url
+
+
+engine = create_async_engine(_async_url(settings.DATABASE_URL), echo=False, pool_pre_ping=True)
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
 

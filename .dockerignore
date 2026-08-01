@@ -1,0 +1,17 @@
+# build context — не тащим тяжёлое/секретное в образ
+**/node_modules
+**/dist
+**/.venv
+**/__pycache__
+**/*.pyc
+.git
+.gitignore
+**/.env
+**/.env.*
+.mcp.json
+.claude
+research
+docs
+scripts
+*.md
+frontend/.vite
