@@ -5,7 +5,25 @@ import { useEffect, useRef } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
-const STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
+// РАСТРОВЫЙ стиль (PNG-тайлы), а не векторный GL — растр рисуется даже там,
+// где векторный WebGL-рендеринг отключён/программный (песочницы, слабые GPU).
+// Надёжнее для инвестор-демо на любой машине.
+const STYLE = {
+  version: 8,
+  sources: {
+    carto: {
+      type: 'raster',
+      tiles: [
+        'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png',
+        'https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png',
+        'https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png',
+      ],
+      tileSize: 256,
+      attribution: '© OpenStreetMap © CARTO',
+    },
+  },
+  layers: [{ id: 'carto', type: 'raster', source: 'carto' }],
+}
 
 export default function CorridorMap({ legs = [], lineColor = '#2E7D8A' }) {
   const containerRef = useRef(null)
