@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
+import { TrainFront, Ship } from 'lucide-react'
 import { useAuth } from '../lib/auth.jsx'
 import { useI18n } from '../lib/i18n.js'
 
@@ -42,10 +43,13 @@ export default function Login() {
           <p className="mt-4 text-steel-light max-w-md">
             Учёт перевозок по Среднему коридору. Стадии, деньги по плечам, наглядно — на замену Excel.
           </p>
-          <div className="mt-8 flex flex-wrap items-center gap-2 font-mono text-sm text-steel-light">
-            <b className="text-white">Грузия</b><span className="text-sea">──🚆──›</span>
-            <b className="text-white">Баку/Алят</b><span className="text-sea">──⛴──›</span>
-            <b className="text-white">Туркменбаши</b><span className="text-sea">──🚆──›</span>
+          <div className="mt-8 flex flex-wrap items-center gap-x-2 gap-y-3 text-sm text-steel-light">
+            <b className="text-white">Грузия</b>
+            <span className="flex items-center gap-1 text-sea"><span className="h-px w-4 bg-sea/50" /><TrainFront className="h-4 w-4" strokeWidth={2} /><span className="h-px w-4 bg-sea/50" /></span>
+            <b className="text-white">Баку/Алят</b>
+            <span className="flex items-center gap-1 text-sea"><span className="h-px w-4 bg-sea/50" /><Ship className="h-4 w-4" strokeWidth={2} /><span className="h-px w-4 bg-sea/50" /></span>
+            <b className="text-white">Туркменбаши</b>
+            <span className="flex items-center gap-1 text-sea"><span className="h-px w-4 bg-sea/50" /><TrainFront className="h-4 w-4" strokeWidth={2} /><span className="h-px w-4 bg-sea/50" /></span>
             <b className="text-white">Ташкент</b>
           </div>
         </div>

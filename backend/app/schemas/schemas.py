@@ -92,6 +92,17 @@ class ChargeOut(ORM):
     due_date: date | None = None
 
 
+class ChargeUpdate(BaseModel):
+    """Частичная правка строки денег (замыкает финцикл: оплата/правка)."""
+    amount: float | None = Field(default=None, gt=0)
+    paid_amount: float | None = Field(default=None, ge=0)
+    payment_status: str | None = None
+    due_date: date | None = None
+    charge_type: str | None = None
+    currency: str | None = None
+    rate_to_usd: float | None = Field(default=None, gt=0)
+
+
 # ---- containers ----
 class ContainerCreate(BaseModel):
     ref_no: str | None = None  # генерируем если пусто

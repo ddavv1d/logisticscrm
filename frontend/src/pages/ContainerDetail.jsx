@@ -3,8 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api.js'
 import { useAuth } from '../lib/auth.jsx'
 import { useI18n } from '../lib/i18n.js'
-import { makeLookups, fmtDateTime, fmtUsd, TRANSPORT_ICON } from '../lib/format.js'
+import { makeLookups, fmtDateTime } from '../lib/format.js'
 import { StageBadge, StuckPill, Toast, Skeleton } from '../components/ui.jsx'
+import { TransportIcon } from '../lib/icons.jsx'
+import { Flag } from 'lucide-react'
 import StagePopover from '../components/StagePopover.jsx'
 import MoneyBlock from '../components/MoneyBlock.jsx'
 
@@ -53,6 +55,16 @@ export default function ContainerDetail() {
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-extrabold tabnum tracking-tight">{c.ref_no}</h1>
                 {c.is_stuck && <StuckPill>{c.days_on_stage}{lang === 'ru' ? 'д' : 'd'}</StuckPill>}
+                <button
+                  onClick={async () => {
+                    const upd = await api.patch(`/containers/${c.id}/flag`, {})
+                    setC({ ...c, is_flagged: upd.is_flagged })
+                  }}
+                  title={c.is_flagged ? t('unflag') : t('flag')}
+                  className={`grid h-7 w-7 place-items-center rounded-lg transition-colors ${c.is_flagged ? 'bg-amber-soft text-amber' : 'text-steel-faint hover:bg-base-2 hover:text-steel'}`}
+                >
+                  <Flag className="h-4 w-4" strokeWidth={2} fill={c.is_flagged ? 'currentColor' : 'none'} />
+                </button>
               </div>
               {c.container_no && <div className="font-mono text-sm text-steel mt-0.5">{c.container_no} · {c.container_type || '—'}</div>}
               <div className="text-sm text-steel mt-1">{c.client?.name || '—'}</div>
@@ -79,8 +91,8 @@ export default function ContainerDetail() {
               return (
                 <div key={l.id} className="flex items-center flex-1 last:flex-none">
                   <div className={`flex flex-col items-center ${current ? 'text-sea' : passed ? 'text-grass' : 'text-steel-faint'}`}>
-                    <div className={`grid h-9 w-9 place-items-center rounded-full border-2 text-base ${current ? 'border-sea bg-sea-soft' : passed ? 'border-grass bg-grass-soft' : 'border-line bg-base-card'}`}>
-                      {TRANSPORT_ICON[l.transport_type]}
+                    <div className={`grid h-9 w-9 place-items-center rounded-full border-2 ${current ? 'border-sea bg-sea-soft' : passed ? 'border-grass bg-grass-soft' : 'border-line bg-base-card'}`}>
+                      <TransportIcon type={l.transport_type} className="h-4 w-4" strokeWidth={2} />
                     </div>
                     <span className="mt-1 text-[10px] font-medium max-w-[70px] text-center leading-tight">
                       {L.locations[l.from_location]}→{L.locations[l.to_location]}

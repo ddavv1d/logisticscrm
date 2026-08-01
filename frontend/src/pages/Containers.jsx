@@ -101,7 +101,7 @@ export default function Containers() {
                       {c.container_no && <div className="font-mono text-xs text-steel">{c.container_no}</div>}
                     </td>
                     <td className="px-4 py-3 text-graphite">{c.client?.name || '—'}</td>
-                    <td className="px-4 py-3"><RouteMini legs={fakeLegs(c.leg_count)} currentLegSeq={curLeg} /></td>
+                    <td className="px-4 py-3"><RouteMini legs={c.legs} currentLegSeq={curLeg} /></td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <StageBadge code={c.current_stage_code} title={L.stages[c.current_stage_code]} />
@@ -126,10 +126,4 @@ export default function Containers() {
       <Toast show={!!toast} text={`${t('createTitle')}: ${toast}`} />
     </div>
   )
-}
-
-// список плеч в строке таблицы упрощён до количества (реальные плечи — в карточке)
-function fakeLegs(n) {
-  const types = ['rail', 'sea_ferry', 'rail', 'truck']
-  return Array.from({ length: n || 4 }).map((_, i) => ({ id: i, seq: i + 1, transport_type: types[i] || 'other' }))
 }

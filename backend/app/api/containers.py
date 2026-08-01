@@ -16,6 +16,7 @@ from app.models.models import ChargeLine, Container, Leg, User
 from app.schemas.schemas import (
     ChargeIn,
     ChargeOut,
+    ChargeUpdate,
     ContainerCreate,
     ContainerDetail,
     ContainerListItem,
@@ -242,3 +243,57 @@ async def add_charge(
     await session.flush()
     await session.refresh(charge)
     return ChargeOut.model_validate(charge)
+
+
+async def _get_charge(session: AsyncSession, container_id: int, charge_id: int) -> ChargeLine:
+    # anti-IDOR: заряд должен принадлежать этому контейнеру, иначе 404
+    ch = await session.get(ChargeLine, charge_id)
+    if ch is None or ch.container_id != container_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Строка не найдена")
+    return ch
+
+
+@router.patch(
+    "/{container_id}/charges/{charge_id}",
+    response_model=ChargeOut,
+    dependencies=[Depends(csrf_protect)],
+)
+async def update_charge(
+    container_id: int,
+    charge_id: int,
+    body: ChargeUpdate,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(current_user),
+):
+    """Правка строки денег / отметка оплаты (замыкает финцикл — бухгалтер закрывает долг)."""
+    _money_gate(user)
+    await _load(session, container_id)
+    ch = await _get_charge(session, container_id, charge_id)
+    data = body.model_dump(exclude_unset=True)
+    for k, v in data.items():
+        setattr(ch, k, v)
+    # авто-статус по paid_amount, если статус явно не задан
+    if "paid_amount" in data and "payment_status" not in data:
+        paid, amount = float(ch.paid_amount), float(ch.amount)
+        ch.payment_status = "paid" if paid >= amount else "partial" if paid > 0 else "unpaid"
+    await session.flush()
+    await session.refresh(ch)
+    return ChargeOut.model_validate(ch)
+
+
+@router.delete(
+    "/{container_id}/charges/{charge_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(csrf_protect)],
+)
+async def delete_charge(
+    container_id: int,
+    charge_id: int,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(current_user),
+):
+    """Удаление ошибочной строки денег."""
+    _money_gate(user)
+    await _load(session, container_id)
+    ch = await _get_charge(session, container_id, charge_id)
+    await session.delete(ch)

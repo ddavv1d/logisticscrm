@@ -1,33 +1,55 @@
+/* Шрифт Onest — кириллица, дизайн-типографика (замена системного шрифта).
+   Судья №3: системный шрифт = 80% ощущения «дёшево». */
+@import url('https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  html { -webkit-font-smoothing: antialiased; }
+  html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
   body {
     @apply bg-base text-graphite;
-    font-feature-settings: 'tnum' 0;
+    font-family: 'Onest', ui-sans-serif, system-ui, -apple-system, sans-serif;
   }
-  :focus-visible { @apply outline-none ring-2 ring-sea ring-offset-1; }
+  :focus-visible { @apply outline-none ring-2 ring-sea ring-offset-2 ring-offset-base; }
+  ::selection { background: rgba(46, 125, 138, 0.16); }
 }
 
 @layer components {
-  .tabnum { font-variant-numeric: tabular-nums; }
-  .card { @apply bg-base-card border border-line rounded-card shadow-card; }
+  .tabnum { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+
+  /* карточки: заметная, но мягкая тень + чёткая граница (судьи: карточки сливались с фоном) */
+  .card {
+    @apply bg-base-card border border-line rounded-card;
+    box-shadow: 0 1px 2px rgba(30, 42, 50, 0.04), 0 4px 16px -6px rgba(30, 42, 50, 0.10);
+  }
+  .card-hover { @apply transition-all duration-200; }
+  .card-hover:hover { box-shadow: 0 2px 4px rgba(30,42,50,0.05), 0 12px 28px -8px rgba(30,42,50,0.16); transform: translateY(-1px); }
+
   .chip {
     @apply inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium
-           transition-colors cursor-pointer select-none border-line text-steel;
+           transition-colors cursor-pointer select-none border-line text-steel bg-base-card;
   }
+  .chip:hover { @apply bg-base-2; }
   .chip-active { @apply bg-graphite text-white border-graphite; }
+  .chip-active:hover { @apply bg-graphite-2; }
+
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-chip px-4 py-2 text-sm font-semibold
            transition-all active:translate-y-px disabled:opacity-50 disabled:pointer-events-none;
   }
-  .btn-primary { @apply btn bg-sea text-white hover:bg-sea-deep; }
-  .btn-ghost { @apply btn border border-line text-graphite hover:bg-base-2; }
+  .btn-primary { @apply btn bg-sea text-white hover:bg-sea-deep shadow-sm; }
+  .btn-ghost { @apply btn border border-line text-graphite bg-base-card hover:bg-base-2; }
+  .btn-danger { @apply btn bg-brick text-white hover:brightness-95; }
+
   .field-label { @apply block text-xs font-semibold uppercase tracking-wide text-steel mb-1.5; }
   .input {
     @apply w-full rounded-chip border border-line bg-base-card px-3 py-2 text-sm
-           placeholder:text-steel-faint focus:border-sea;
+           placeholder:text-steel-faint focus:border-sea transition-colors;
   }
+
+  /* тонкая полоса-доля для ранжирования (дебиторка) */
+  .share-track { @apply relative h-1.5 rounded-full bg-base-2 overflow-hidden; }
+  .share-fill { @apply absolute inset-y-0 left-0 rounded-full; }
 }

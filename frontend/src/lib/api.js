@@ -36,6 +36,7 @@ export const api = {
   get: (p) => request('GET', p),
   post: (p, b) => request('POST', p, b),
   patch: (p, b) => request('PATCH', p, b),
+  del: (p) => request('DELETE', p),
   // экспорт: открываем в новой вкладке (браузер скачает)
   exportUrl: (params) => {
     const q = new URLSearchParams(params).toString()

@@ -40,3 +40,4 @@ research/RAW_COUNCIL_RESULT.json
 backend/.venv/
 frontend/node_modules/
 frontend/dist/
+.mcp.json
