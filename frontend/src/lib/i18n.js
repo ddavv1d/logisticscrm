@@ -25,6 +25,7 @@ const STRINGS = {
     addCharge: 'Добавить строку', currency: 'Валюта', amount: 'Сумма', rate: 'Курс к USD',
     paid: 'Оплачено', dueDate: 'Срок оплаты', outstanding: 'Остаток', noMoney: 'Финансы недоступны для вашей роли',
     markPaid: 'Оплачено', deleteRow: 'Удалить строку', flag: 'На контроль', unflag: 'Снять контроль', backdate: 'Дата факта',
+    freightPrice: 'Стоимость перевозки клиенту',
     // create
     createTitle: 'Новый контейнер', containerNo: '№ контейнера (ISO 6346)', containerType: 'Тип',
     applyPreset: 'Шаблон «Средний коридор» (4 плеча)', create: 'Создать', cancel: 'Отмена',
@@ -50,6 +51,7 @@ const STRINGS = {
     addCharge: 'Add line', currency: 'Currency', amount: 'Amount', rate: 'Rate to USD',
     paid: 'Paid', dueDate: 'Due date', outstanding: 'Outstanding', noMoney: 'Finance is not available for your role',
     markPaid: 'Mark paid', deleteRow: 'Delete line', flag: 'Flag', unflag: 'Unflag', backdate: 'Actual date',
+    freightPrice: 'Freight price to client',
     createTitle: 'New container', containerNo: 'Container No (ISO 6346)', containerType: 'Type',
     applyPreset: '“Middle Corridor” preset (4 legs)', create: 'Create', cancel: 'Cancel',
     optional: 'optional',

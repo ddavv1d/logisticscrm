@@ -1,109 +1,95 @@
-// «Живая карта коридора» — адаптация world-map (21st) под наш стек.
-// Оригинал: Next.js+TS (next/image, next-themes) → переписан под Vite+JS.
-// Карта ОБРЕЗАНА до региона Средний коридор (Кавказ → Каспий → Центральная Азия),
-// а не весь мир — иначе маршрут был бы точкой в углу пустого глобуса.
-// Точки = реальные города коридора; линии = плечи маршрута с анимацией «рисования».
-import { useMemo } from 'react'
-import { motion } from 'framer-motion'
-import DottedMap from 'dotted-map'
+// «Живая карта коридора» на MapLibre GL — НАСТОЯЩИЕ гео-тайлы (страны точно на месте).
+// Адаптация flightcn-компонента (Next+TS) под наш Vite+JS: без next-themes, без базы
+// аэропортов — только карта + маркеры реальных городов коридора + линии маршрута.
+import { useEffect, useRef } from 'react'
+import * as maplibregl from 'maplibre-gl'
+import 'maplibre-gl/dist/maplibre-gl.css'
 
-// bounding box коридора (немного шире, чтобы был воздух по краям)
-const BOX = { lngMin: 38, lngMax: 74, latMin: 34, latMax: 48 }
-const W = 800
-const H = 320
-
-// проекция гео → пиксели внутри нашего bounding box
-function project(lat, lng) {
-  const x = ((lng - BOX.lngMin) / (BOX.lngMax - BOX.lngMin)) * W
-  const y = ((BOX.latMax - lat) / (BOX.latMax - BOX.latMin)) * H
-  return { x, y }
-}
-
-function curvedPath(a, b) {
-  const midX = (a.x + b.x) / 2
-  const midY = Math.min(a.y, b.y) - 40
-  return `M ${a.x} ${a.y} Q ${midX} ${midY} ${b.x} ${b.y}`
-}
+const STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
 
 export default function CorridorMap({ legs = [], lineColor = '#2E7D8A' }) {
-  // точечный фон карты — считаем один раз
-  const svgMap = useMemo(() => {
-    const map = new DottedMap({ height: 60, grid: 'diagonal' })
-    return map.getSVG({
-      radius: 0.25,
-      color: '#26343d22',
-      shape: 'circle',
-      backgroundColor: 'transparent',
+  const containerRef = useRef(null)
+  const mapRef = useRef(null)
+
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return
+
+    const map = new maplibregl.Map({
+      container: containerRef.current,
+      style: STYLE,
+      center: [55, 41], // середина коридора (Каспий)
+      zoom: 3.4,
+      attributionControl: { compact: true },
+      renderWorldCopies: false,
     })
+    mapRef.current = map
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right')
+
+    map.on('load', () => {
+      // фон-заливка нашим цветом: если внешние тайлы (CARTO) заблокированы
+      // корп-сетью/firewall — маршрут и города всё равно видны на чистом фоне,
+      // а не на уродливом сером пятне. С интернетом тайлы рисуются поверх.
+      if (!map.getLayer('lc-bg')) {
+        const first = map.getStyle().layers?.[0]?.id
+        map.addLayer({ id: 'lc-bg', type: 'background', paint: { 'background-color': '#eef2f4' } }, first)
+      }
+      // фитим карту по всем точкам коридора
+      const pts = []
+      legs.forEach((l) => { pts.push([l.from.lng, l.from.lat], [l.to.lng, l.to.lat]) })
+      if (pts.length) {
+        const b = pts.reduce((bb, p) => bb.extend(p), new maplibregl.LngLatBounds(pts[0], pts[0]))
+        map.fitBounds(b, { padding: 60, duration: 0, maxZoom: 5 })
+      }
+
+      // линии маршрута (пройденные — цветом, предстоящие — пунктиром)
+      legs.forEach((leg, i) => {
+        const id = `leg-${i}`
+        map.addSource(id, {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            geometry: { type: 'LineString', coordinates: [[leg.from.lng, leg.from.lat], [leg.to.lng, leg.to.lat]] },
+          },
+        })
+        map.addLayer({
+          id,
+          type: 'line',
+          source: id,
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: {
+            'line-color': leg.done ? lineColor : '#8a99a3',
+            'line-width': leg.done ? 3 : 2,
+            'line-opacity': leg.done ? 0.9 : 0.6,
+            ...(leg.done ? {} : { 'line-dasharray': [2, 2] }),
+          },
+        })
+      })
+
+      // маркеры-города
+      const seen = new Set()
+      const addMarker = (node, active) => {
+        const key = `${node.lng},${node.lat}`
+        if (seen.has(key)) return
+        seen.add(key)
+        // безопасное построение DOM (без innerHTML — данные могут прийти из БД)
+        const el = document.createElement('div')
+        el.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer'
+        const dot = document.createElement('div')
+        dot.style.cssText = `background:${active ? lineColor : '#8a99a3'};width:12px;height:12px;border-radius:9999px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3)`
+        const label = document.createElement('div')
+        label.style.cssText = 'margin-top:2px;font:600 11px/1 Onest,sans-serif;color:#1E2A32;background:rgba(255,255,255,.85);padding:1px 4px;border-radius:4px;white-space:nowrap'
+        label.textContent = node.label // textContent — экранирует, XSS невозможен
+        el.append(dot, label)
+        new maplibregl.Marker({ element: el, anchor: 'top' })
+          .setLngLat([node.lng, node.lat])
+          .addTo(map)
+      }
+      legs.forEach((leg) => { addMarker(leg.from, leg.done); addMarker(leg.to, leg.done) })
+    })
+
+    return () => { map.remove(); mapRef.current = null }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  return (
-    <div className="relative w-full overflow-hidden rounded-card border border-line bg-base-2/40" style={{ aspectRatio: `${W}/${H}` }}>
-      {/* точечный фон */}
-      <img
-        src={`data:image/svg+xml;utf8,${encodeURIComponent(svgMap)}`}
-        alt="карта коридора"
-        draggable={false}
-        className="absolute inset-0 h-full w-full object-cover opacity-70 pointer-events-none select-none [mask-image:linear-gradient(to_bottom,transparent,black_12%,black_88%,transparent)]"
-      />
-
-      <svg viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 h-full w-full pointer-events-none">
-        <defs>
-          <linearGradient id="corridor-line" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor={lineColor} stopOpacity="0" />
-            <stop offset="8%" stopColor={lineColor} stopOpacity="1" />
-            <stop offset="92%" stopColor={lineColor} stopOpacity="1" />
-            <stop offset="100%" stopColor={lineColor} stopOpacity="0" />
-          </linearGradient>
-        </defs>
-
-        {/* линии плеч с анимацией «рисования» */}
-        {legs.map((leg, i) => {
-          const a = project(leg.from.lat, leg.from.lng)
-          const b = project(leg.to.lat, leg.to.lng)
-          const done = leg.done
-          return (
-            <motion.path
-              key={`leg-${i}`}
-              d={curvedPath(a, b)}
-              fill="none"
-              stroke={done ? 'url(#corridor-line)' : '#8a99a355'}
-              strokeWidth={done ? 2 : 1.5}
-              strokeDasharray={done ? '0' : '4 4'}
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: 1.1, delay: 0.35 * i, ease: 'easeOut' }}
-            />
-          )
-        })}
-
-        {/* узлы-города */}
-        {legs.map((leg, i) => (
-          <Node key={`from-${i}`} p={project(leg.from.lat, leg.from.lng)} label={leg.from.label} active={leg.done} color={lineColor} showLabel={i === 0} />
-        ))}
-        {legs.map((leg, i) => (
-          <Node key={`to-${i}`} p={project(leg.to.lat, leg.to.lng)} label={leg.to.label} active={leg.done} color={lineColor} showLabel />
-        ))}
-      </svg>
-    </div>
-  )
-}
-
-function Node({ p, label, active, color, showLabel }) {
-  return (
-    <g>
-      {active && (
-        <circle cx={p.x} cy={p.y} r="3" fill={color} opacity="0.5">
-          <animate attributeName="r" from="3" to="10" dur="1.6s" repeatCount="indefinite" />
-          <animate attributeName="opacity" from="0.5" to="0" dur="1.6s" repeatCount="indefinite" />
-        </circle>
-      )}
-      <circle cx={p.x} cy={p.y} r="3.5" fill={active ? color : '#8a99a3'} stroke="#fff" strokeWidth="1.5" />
-      {showLabel && label && (
-        <text x={p.x} y={p.y - 9} textAnchor="middle" className="fill-graphite" style={{ fontSize: 11, fontWeight: 600 }}>
-          {label}
-        </text>
-      )}
-    </g>
-  )
+  return <div ref={containerRef} className="w-full rounded-card overflow-hidden border border-line" style={{ height: 320 }} />
 }

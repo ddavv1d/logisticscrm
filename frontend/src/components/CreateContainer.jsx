@@ -11,6 +11,8 @@ export default function CreateContainer({ onClose, onCreated }) {
   const [form, setForm] = useState({
     container_no: '', container_type: '', client_id: '',
     origin_location: 'poti', dest_location: 'tashkent', apply_corridor_preset: true,
+    // стоимость перевозки клиенту (доход) — сразу заводим, чтобы маржа/дебиторка считались
+    price: '', currency: 'USD', rate_to_usd: '1', due_date: '',
   })
   const [busy, setBusy] = useState(false)
 
@@ -19,9 +21,23 @@ export default function CreateContainer({ onClose, onCreated }) {
   const submit = async (e) => {
     e.preventDefault(); setBusy(true)
     try {
-      const body = { ...form, client_id: form.client_id ? Number(form.client_id) : null,
-        container_type: form.container_type || null, container_no: form.container_no || null }
+      const body = {
+        client_id: form.client_id ? Number(form.client_id) : null,
+        container_type: form.container_type || null,
+        container_no: form.container_no || null,
+        origin_location: form.origin_location,
+        dest_location: form.dest_location,
+        apply_corridor_preset: form.apply_corridor_preset,
+      }
       const c = await api.post('/containers', body)
+      // если указана стоимость — сразу создаём income (freight) для маржи/дебиторки
+      if (form.price && Number(form.price) > 0) {
+        await api.post(`/containers/${c.id}/charges`, {
+          kind: 'income', charge_type: 'freight_rail', amount: Number(form.price),
+          currency: form.currency, rate_to_usd: Number(form.rate_to_usd) || 1,
+          payment_status: 'unpaid', ...(form.due_date ? { due_date: form.due_date } : {}),
+        })
+      }
       onCreated(c)
     } finally { setBusy(false) }
   }
@@ -78,6 +94,37 @@ export default function CreateContainer({ onClose, onCreated }) {
             onChange={(e) => setForm({ ...form, apply_corridor_preset: e.target.checked })} />
           <span className="text-sm font-medium text-sea-deep">{t('applyPreset')}</span>
         </label>
+
+        {/* стоимость перевозки клиенту — сразу заводим доход (маржа/дебиторка оживают) */}
+        <div className="mt-4 rounded-chip border border-grass/30 bg-grass-soft/50 p-3">
+          <div className="text-xs font-semibold uppercase tracking-wide text-grass mb-2">{t('freightPrice')}</div>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="col-span-2">
+              <label className="field-label">{t('amount')}</label>
+              <input className="input tabnum" type="number" step="0.01" min="0" placeholder="5000"
+                value={form.price} onChange={set('price')} />
+            </div>
+            <div>
+              <label className="field-label">{t('currency')}</label>
+              <select className="input" value={form.currency}
+                onChange={(e) => setForm({ ...form, currency: e.target.value, rate_to_usd: e.target.value === 'USD' ? '1' : form.rate_to_usd })}>
+                {(reference?.currencies || []).map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            {form.currency !== 'USD' && (
+              <div>
+                <label className="field-label">{t('rate')}</label>
+                <input className="input tabnum" type="number" step="0.000001" value={form.rate_to_usd} onChange={set('rate_to_usd')} />
+              </div>
+            )}
+            <div className={form.currency === 'USD' ? 'col-span-2' : ''}>
+              <label className="field-label">{t('dueDate')} ({t('optional')})</label>
+              <input className="input" type="date" value={form.due_date} onChange={set('due_date')} />
+            </div>
+          </div>
+        </div>
 
         <div className="mt-6 flex gap-2">
           <button type="button" className="btn-ghost flex-1" onClick={onClose}>{t('cancel')}</button>
